@@ -1,5 +1,6 @@
+import GameSidebar from './features/game/components/GameSidebar';
 import ExpeditionGame from './features/game/ExpeditionGame';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { moonData } from './data/moonData';
 import { marsData } from './data/marsData';
 import { deepSpaceData } from './data/deepSpaceData';
@@ -20,7 +21,6 @@ function cleanPlanetImage(src) {
     img.decoding = 'sync';
     img.src = src;
     img.onload = () => {
-      // Piksel art görselleri hızla işlemek için 256x256 boyuta optimize et
       const size = 256;
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -41,7 +41,6 @@ function cleanPlanetImage(src) {
           const dx = x - cx;
           if (dx * dx + dy * dy > coreRadiusSq) {
             const idx = (y * size + x) * 4;
-            // Siyah arka plan piksellerini şeffaf yap
             if (data[idx] < 22 && data[idx + 1] < 22 && data[idx + 2] < 26) {
               data[idx + 3] = 0;
             }
@@ -69,7 +68,6 @@ function cleanPlanetImage(src) {
   return planetListeners[src];
 }
 
-// Uygulama yüklenir yüklenmez 3 gezegeni arka planda şeffaflaştırıp önbelleğe al
 ['/images/moon.jpg', '/images/mars.jpg', '/images/deepspace.jpg'].forEach(cleanPlanetImage);
 
 function TransparentPlanet({ src, alt }) {
@@ -102,12 +100,40 @@ function TransparentPlanet({ src, alt }) {
   );
 }
 
+// Videonun son kısmının (loop'a girecek yerin) başladığı saniye:
+const LOOP_START_TIME = 5.11;
+
 export default function App() {
   const [stage, setStage] = useState('intro_start');
-
   const [selectedMission, setSelectedMission] = useState(null);
+
+  // Kullanıcı adı state'leri
+  const [playerName, setPlayerName] = useState('');
+  const [nameInput, setNameInput] = useState('');
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const usernameVideoRef = useRef(null);
+
   const handleContinueAfterReading = () => setStage('intro_end');
-  const handleSelectMission = (mission) => { setSelectedMission(mission); setStage('game'); };
+  const handleSelectMission = (mission) => {
+    setSelectedMission(mission);
+    setStage('game');
+  };
+
+  // İsim girilip onaylandığında çalışır ve önceki oyun ilerlemesini sıfırlar
+  const handleNameSubmit = (e) => {
+    e.preventDefault();
+    const trimmed = nameInput.trim();
+    if (!trimmed) return;
+    setPlayerName(trimmed);
+    try {
+      ['moon', 'mars', 'deepSpace'].forEach((id) => {
+        localStorage.removeItem(`elvira-expedition-v1-${id}`);
+        sessionStorage.removeItem(`elvira-expedition-v1-${id}`);
+      });
+      sessionStorage.setItem('elvira-player-name', trimmed);
+    } catch {}
+    setStage('select');
+  };
 
   const renderPlanetArt = (id) => {
     if (id === 'moon') {
@@ -135,6 +161,7 @@ export default function App() {
 
   return (
     <div className="space-app-root">
+      <GameSidebar onRestart={() => window.location.reload()} />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
 
@@ -291,6 +318,99 @@ export default function App() {
           color: #05050a;
         }
 
+        .Continue-disabled {
+          opacity: 0.45;
+          animation: none;
+          cursor: not-allowed;
+        }
+
+        /* KULLANICI ADI (USERNAME) EKRANI STİLLERİ - SOL TARAFTA, SAĞDAKİ ASTRONOTU KAPATMAZ */
+        .username-screen {
+          position: relative;
+          z-index: 2;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: flex-start;
+          padding: 0 6vw 0 8vw;
+        }
+
+        .username-box {
+          max-width: 560px;
+          width: 100%;
+          transition: opacity 0.9s ease, transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .username-box.hidden {
+          opacity: 0;
+          transform: translateY(24px);
+          pointer-events: none;
+        }
+
+        .username-box.visible {
+          opacity: 1;
+          transform: translateY(0);
+          pointer-events: auto;
+        }
+
+        .username-badge {
+          display: inline-block;
+          font-family: 'Press Start 2P', monospace;
+          font-size: 10px;
+          color: #38bdf8;
+          letter-spacing: 2.5px;
+          margin-bottom: 16px;
+          text-shadow: 0 2px 0 #000, 0 0 12px rgba(56, 189, 248, 0.6);
+        }
+
+        .username-title {
+          font-family: 'Press Start 2P', monospace;
+          font-size: clamp(18px, 2.4vw, 28px);
+          color: #f8fafc;
+          line-height: 1.5;
+          margin: 0 0 16px 0;
+          text-shadow:
+            0 4px 0 #05050d,
+            -2px -2px 0 #05050d,
+            2px -2px 0 #05050d,
+            0 0 25px rgba(56, 189, 248, 0.65);
+        }
+
+        .username-sub {
+          font-family: 'Silkscreen', monospace;
+          font-size: clamp(13px, 1.3vw, 16px);
+          line-height: 1.75;
+          color: #cbd5e1;
+          margin: 0 0 26px 0;
+          text-shadow: 0 2px 0 #000, 0 0 14px #000;
+        }
+
+        .retro-input {
+          width: 100%;
+          max-width: 420px;
+          font-family: 'Press Start 2P', monospace;
+          font-size: 14px;
+          padding: 16px 18px;
+          background: rgba(8, 11, 26, 0.85);
+          color: #fcd34d;
+          border: 2px solid #38bdf8;
+          outline: none;
+          letter-spacing: 2px;
+          box-shadow: 0 0 20px rgba(56, 189, 248, 0.3), inset 0 0 12px rgba(56, 189, 248, 0.15);
+          transition: border-color 0.25s, box-shadow 0.25s;
+        }
+
+        .retro-input::placeholder {
+          color: rgba(148, 163, 184, 0.5);
+          font-size: 11px;
+        }
+
+        .retro-input:focus {
+          border-color: #fcd34d;
+          box-shadow: 0 0 25px rgba(252, 211, 77, 0.5), inset 0 0 14px rgba(252, 211, 77, 0.2);
+        }
+
         .sector-screen {
           position: relative;
           z-index: 2;
@@ -382,14 +502,39 @@ export default function App() {
         />
       )}
 
-      {/* 3. AŞAMA ARKA PLANI */}
+      {/* 3. AŞAMA ARKA PLANI (Bittiğinde 'username' aşamasına geçer) */}
       {stage === 'intro_end' && (
         <video
           src="/videos/opening2.mp4"
           autoPlay
           muted
           playsInline
-          onEnded={() => setStage('select')}
+          onEnded={() => {
+            setShowNamePrompt(false);
+            setStage('username');
+          }}
+          className="bg-media"
+          style={{ filter: 'brightness(0.95)' }}
+        />
+      )}
+
+      {/* 3.5 AŞAMA: KULLANICI ADI ALMA VİDEOSU (Son kısmı loop'a girer) */}
+      {stage === 'username' && (
+        <video
+          ref={usernameVideoRef}
+          src="/videos/username.mp4"
+          autoPlay
+          muted
+          playsInline
+          onTimeUpdate={(e) => {
+            const vid = e.currentTarget;
+            if (vid.currentTime >= LOOP_START_TIME && !showNamePrompt) {
+              setShowNamePrompt(true);
+            }
+          }}
+          onEnded={(e) => {
+            setShowNamePrompt(true);
+          }}
           className="bg-media"
           style={{ filter: 'brightness(0.95)' }}
         />
@@ -438,12 +583,52 @@ export default function App() {
           </div>
 
           <button
-            onClick={() => setStage('select')}
+            onClick={() => {
+              setShowNamePrompt(false);
+              setStage('username');
+            }}
             className="retro-btn"
             style={{ position: 'fixed', bottom: '28px', right: '28px', pointerEvents: 'auto', opacity: 0.75 }}
           >
             Skip Intro &gt;&gt;
           </button>
+        </div>
+      )}
+
+      {/* KULLANICI ADI GİRİŞ EKRANI (Sağdaki astronotu kapatmamak için solda) */}
+      {stage === 'username' && (
+        <div className="username-screen">
+          <form
+            onSubmit={handleNameSubmit}
+            className={`username-box ${showNamePrompt ? 'visible' : 'hidden'}`}
+          >
+            <span className="username-badge">IDENTIFICATION REQUIRED //</span>
+            <h1 className="username-title">WHO IS FLOATING IN THE COSMOS?</h1>
+            <p className="username-sub">
+              Enter your explorer callsign to unlock the mission archives and uncover the stories left behind.
+            </p>
+
+            <div>
+              <input
+                type="text"
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="ENTER YOUR NAME..."
+                maxLength={24}
+                autoFocus
+                className="retro-input"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={!nameInput.trim()}
+              className={`continue-cosmos-btn ${!nameInput.trim() ? 'Continue-disabled' : ''}`}
+              style={{ marginTop: '24px' }}
+            >
+              [ CONFIRM IDENTITY &gt;&gt; ]
+            </button>
+          </form>
         </div>
       )}
 
@@ -490,8 +675,15 @@ export default function App() {
         </div>
       )}
 
-      {/* GEZEGENE İNİŞ VİDEOSU */}
-      {stage === 'game' && selectedMission && <ExpeditionGame key={selectedMission.id} sector={selectedMission} onExit={() => setStage('select')} />}
+      {/* OYUN VE GEZEGENE İNİŞ EKRANI (playerName prop olarak gönderiliyor) */}
+      {stage === 'game' && selectedMission && (
+        <ExpeditionGame
+          key={selectedMission.id}
+          sector={selectedMission}
+          playerName={playerName}
+          onExit={() => setStage('select')}
+        />
+      )}
     </div>
   );
 }
