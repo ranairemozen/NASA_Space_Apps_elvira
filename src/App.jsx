@@ -1,5 +1,5 @@
 import { expeditions } from './data/expeditions';
-import { playSound, useAudioControls, useMusic, syncIntroAudio } from './features/audio/audio';
+import { playSound, useAudioControls, useMusic, syncIntroAudio, startIntroAudio } from './features/audio/audio';
 import GameSidebar from './features/game/components/GameSidebar';
 import ExpeditionGame from './features/game/ExpeditionGame';
 import { useState, useEffect, useRef } from 'react';
@@ -114,7 +114,7 @@ function TransparentPlanet({ src, alt }) {
 const LOOP_START_TIME = 5.11;
 
 export default function App() {
-  const [stage, setStage] = useState('intro_start');
+  const [stage, setStage] = useState('title');
   const [selectedMission, setSelectedMission] = useState(null);
 
   // Kullanıcı adı state'leri
@@ -125,7 +125,7 @@ export default function App() {
   const introAudioOffset = useRef(0);
 
   useAudioControls();
-  useMusic(stage === 'game' ? null : stage === 'username' ? 'name' : stage === 'select' ? 'intro' : 'originalIntro', !stage.startsWith('intro_'));
+  useMusic((stage === 'game' || stage === 'title') ? null : stage === 'username' ? 'name' : stage === 'select' ? 'intro' : 'originalIntro', !stage.startsWith('intro_'));
 
   const handleContinueAfterReading = () => { syncIntroAudio(introAudioOffset.current); setStage('intro_end'); };
   const handleSelectMission = (mission) => {
@@ -490,6 +490,20 @@ export default function App() {
           transform: scale(1.05);
         }
       `}</style>
+
+      {stage === 'title' && (
+        <div style={{ position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', zIndex: 10, padding: '24px', background: 'linear-gradient(#03030855, #03030888), url(/videos/gif.gif) center / cover' }}>
+          <div style={{ textAlign: 'center' }}>
+            <h1 style={{ margin: 0 }}>
+              <button className="pixel-title" type="button" aria-label="Space Story — start exploration" onClick={() => { introAudioOffset.current = 0; startIntroAudio(); setStage('intro_start'); }}
+                style={{ background: 'transparent', border: '2px solid #fcd34d', color: '#fcd34d', padding: '28px clamp(16px, 4vw, 48px)', fontSize: 'clamp(24px, 5vw, 64px)', lineHeight: 1.5, cursor: 'pointer', textShadow: '0 4px 0 #000, 0 0 28px #fcd34d88', boxShadow: '4px 4px 0 #000, 0 0 24px #fcd34d33', maxWidth: '100%' }}>
+                Space Story
+              </button>
+            </h1>
+            <p className="retro-font" style={{ color: '#e2e8f0', fontSize: '14px', marginTop: '24px', letterSpacing: '2px' }}>CLICK THE TITLE TO BEGIN &gt;&gt;</p>
+          </div>
+        </div>
+      )}
 
       {/* 1. AŞAMA ARKA PLANI */}
       {stage === 'intro_start' && (

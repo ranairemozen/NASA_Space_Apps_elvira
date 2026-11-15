@@ -197,3 +197,11 @@ export function syncIntroAudio(time, paused = false) {
   if (paused) music.pause();
   else if (!document.hidden && music.paused) attempt(music);
 }
+
+// Called directly from the title button's real user activation.
+export function startIntroAudio() {
+  unlocked = true;
+  audioContext?.resume().catch(() => {});
+  setMusic('originalIntro', false);
+  syncIntroAudio(0);
+}
