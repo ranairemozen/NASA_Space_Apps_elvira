@@ -1,3 +1,4 @@
+import { playSound, stopSound } from '../../audio/audio';
 import { useEffect, useRef, useState } from 'react';
 import { archiveDetails } from '../../../data/archiveDetails';
 import photos from '../../../data/archivePhotos.json';
@@ -17,6 +18,9 @@ export default function ArchiveCard({ target, onClose }) {
     return () => { dialog.close(); previous?.focus(); };
   }, []);
   function flip() {
+    stopSound('win');
+    stopSound('open');
+    playSound('flip', .4);
     if (!flipped && backRef.current) backRef.current.scrollTop = 0;
     setFlipped(value => !value);
   }

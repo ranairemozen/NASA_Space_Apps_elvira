@@ -72,10 +72,10 @@ export const expeditions = {
             "image": "/images/moon/items/04_surveyor_lander.png",
             "brief": "Robotic Surveyor missions demonstrated soft landings on the Moon before the Apollo landings.",
             "box": [
-              0.5,
-              28,
-              14,
-              17
+              29.5,
+              32,
+              10.5,
+              26
             ]
           }
         ]
