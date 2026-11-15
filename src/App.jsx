@@ -1,3 +1,5 @@
+import { expeditions } from './data/expeditions';
+import { playSound, useAudioControls, useMusic, syncIntroAudio } from './features/audio/audio';
 import GameSidebar from './features/game/components/GameSidebar';
 import ExpeditionGame from './features/game/ExpeditionGame';
 import { useState, useEffect, useRef } from 'react';
@@ -6,6 +8,14 @@ import { marsData } from './data/marsData';
 import { deepSpaceData } from './data/deepSpaceData';
 
 const missions = [moonData, marsData, deepSpaceData];
+
+function isSectorComplete(id) {
+  try {
+    const progress = JSON.parse(sessionStorage.getItem(`elvira-expedition-v1-${id}`));
+    const targets = expeditions[id]?.scenes.flatMap(scene => scene.targets) || [];
+    return targets.length > 0 && Array.isArray(progress?.found) && targets.every(target => progress.found.includes(target.id));
+  } catch { return false; }
+}
 
 // Gezegenleri hafızada tutacak önbellek
 const planetCache = {};
@@ -112,9 +122,14 @@ export default function App() {
   const [nameInput, setNameInput] = useState('');
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const usernameVideoRef = useRef(null);
+  const introAudioOffset = useRef(0);
 
-  const handleContinueAfterReading = () => setStage('intro_end');
+  useAudioControls();
+  useMusic(stage === 'game' ? null : stage === 'username' ? 'name' : stage === 'select' ? 'intro' : 'originalIntro', !stage.startsWith('intro_'));
+
+  const handleContinueAfterReading = () => { syncIntroAudio(introAudioOffset.current); setStage('intro_end'); };
   const handleSelectMission = (mission) => {
+    playSound('select');
     setSelectedMission(mission);
     setStage('game');
   };
@@ -483,7 +498,10 @@ export default function App() {
           autoPlay
           muted
           playsInline
-          onEnded={() => setStage('intro_read')}
+          onPlay={event => syncIntroAudio(event.currentTarget.currentTime)}
+          onTimeUpdate={event => syncIntroAudio(event.currentTarget.currentTime, event.currentTarget.paused)}
+          onPause={event => syncIntroAudio(event.currentTarget.currentTime, true)}
+          onEnded={event => { introAudioOffset.current = event.currentTarget.currentTime; syncIntroAudio(introAudioOffset.current, true); setStage('intro_read'); }}
           className="bg-media"
           style={{ filter: 'brightness(0.95)' }}
         />
@@ -506,6 +524,9 @@ export default function App() {
       {stage === 'intro_end' && (
         <video
           src="/videos/opening2.mp4"
+          onPlay={event => syncIntroAudio(introAudioOffset.current + event.currentTarget.currentTime)}
+          onTimeUpdate={event => syncIntroAudio(introAudioOffset.current + event.currentTarget.currentTime, event.currentTarget.paused)}
+          onPause={event => syncIntroAudio(introAudioOffset.current + event.currentTarget.currentTime, true)}
           autoPlay
           muted
           playsInline
@@ -658,6 +679,7 @@ export default function App() {
                   </h3>
                   
                   {renderPlanetArt(m.id)}
+                  {isSectorComplete(m.id) && <p className="retro-font" style={{ color: '#86efac', fontSize: '11px', lineHeight: '1.6', margin: '6px 0', textAlign: 'center' }}>✓ ALL CARDS COLLECTED</p>}
 
                   <p className="retro-font" style={{ color: '#cbd5e1', fontSize: '12px', lineHeight: '1.65', marginTop: '6px', textShadow: '0 2px 0 #000' }}>
                     {m.subtitle}

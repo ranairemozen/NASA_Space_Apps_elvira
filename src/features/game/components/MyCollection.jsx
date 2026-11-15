@@ -1,3 +1,4 @@
+import { playSound } from '../../audio/audio';
 import { useEffect, useRef, useState } from 'react';
 import { expeditions } from '../../../data/expeditions';
 import ArchiveCard from './ArchiveCard';
@@ -28,7 +29,7 @@ export default function MyCollection({ onClose }) {
       {!total && <p className="elvira-empty">Your collection is empty. Discover objects in the levels to unlock their cards.</p>}
       {groups.filter(group => group.targets.length).map(group => <section key={group.id}>
         <h3>{labels[group.id]}</h3>
-        <div className="elvira-collection-grid">{group.targets.map(target => <button key={target.id} className="elvira-collection-card" onClick={() => setCard(target)}>
+        <div className="elvira-collection-grid">{group.targets.map(target => <button key={target.id} className="elvira-collection-card" onClick={() => { playSound('open'); setCard(target); }}>
           <img src={target.image} alt="" /><strong>{target.name}</strong><span>VIEW CARD &#8599;</span>
         </button>)}</div>
       </section>)}

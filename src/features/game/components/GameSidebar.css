@@ -27,3 +27,12 @@
 .elvira-sidebar button,.elvira-collection button { border:1px solid #746089; padding:12px 16px; background:#17172b; color:#eee; cursor:pointer; font:14px/1.6 'Silkscreen',monospace; box-shadow:3px 3px #000; }
 .elvira-sidebar button:hover,.elvira-collection button:hover { border-color:#fcd34d; }
 .elvira-menu-trigger:focus-visible,.elvira-sidebar button:focus-visible,.elvira-collection button:focus-visible { outline:3px solid #67e8f9; outline-offset:3px; }
+
+.elvira-audio-settings { margin-top:28px; padding-top:20px; border-top:1px solid #344562; }
+.elvira-audio-settings h3 { color:#fcd34d; font:13px/1.6 'Silkscreen',monospace; margin:0 0 18px; }
+.elvira-audio-channel { margin-bottom:22px; }
+.elvira-audio-channel > label:first-child { display:flex; justify-content:space-between; gap:10px; }
+.elvira-audio-channel input[type="range"] { display:block; width:100%; margin:12px 0; accent-color:#fcd34d; cursor:pointer; }
+.elvira-audio-mute { display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; }
+.elvira-audio-mute input { accent-color:#fcd34d; }
+.elvira-audio-channel input:focus-visible { outline:2px solid #67e8f9; outline-offset:3px; }
